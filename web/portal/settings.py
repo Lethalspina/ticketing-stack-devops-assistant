@@ -22,6 +22,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -115,3 +116,13 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
 
 LOGIN_REDIRECT_URL = '/tickets/'[cite: 1]
 LOGOUT_REDIRECT_URL = '/login/'[cite: 1]
+
+# ---- CONFIGURACIÓN DE ALMACENAMIENTO PARA WHITENOISE (PRODUCCIÓN) ----
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
