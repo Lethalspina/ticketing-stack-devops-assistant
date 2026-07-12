@@ -7,7 +7,7 @@ import requests
 import ollama  # <--- IMPORTAMOS EL SDK OFICIAL
 import ansible_runner
 from .models import Ticket
-
+_CHROMA_COLLECTION_ID = None
 log = logging.getLogger(__name__)
 
 # Configuración de entornos de contenedores
@@ -21,6 +21,12 @@ COLL_NAME    = os.getenv("COLLECTION_NAME", "default")
 PLAYBOOKS_PERMITIDOS = ['ping', 'reboot_service']
 
 def inicializar_coleccion_chroma():
+    global _CHROMA_COLLECTION_ID
+    
+    # Si el ID ya se obtuvo en una ejecución anterior en este worker, lo devolvemos directamente
+    if _CHROMA_COLLECTION_ID is not None:
+        return _CHROMA_COLLECTION_ID
+
     url_base = f"{CHROMA_BASE}/api/v1/collections"
     try:
         requests.post(url_base, json={"name": COLL_NAME, "metadata": {"description": "Historial de incidentes"}}, timeout=10)
@@ -28,7 +34,8 @@ def inicializar_coleccion_chroma():
         r.raise_for_status()
         for c in r.json():
             if c["name"] == COLL_NAME:
-                return c["id"]
+                _CHROMA_COLLECTION_ID = c["id"]  # Guardamos en la caché global del módulo
+                return _CHROMA_COLLECTION_ID
     except Exception as e:
         log.error("Error conectando con ChromaDB al inicializar: %s", e)
     return None
@@ -68,15 +75,13 @@ def procesa_ticket(self, ticket_id: int):
         contexto_previo = "\n".join(lineas)
 
         # 3) MEJORA 3: Inferencia estructurada con formato estricto JSON usando el SDK
-        prompt = f"""Eres un ingeniero DevOps. Analiza la incidencia y selecciona el playbook adecuado.
+# 3) Inferencia estructurada con formato estricto JSON usando el SDK
+        prompt = f"""Eres un ingeniero DevOps. Analiza la incidencia, selecciona el playbook adecuado y extrae el host objetivo y el servicio afectado.
 Incidencia actual: {ticket.descripcion}
 Historial: {contexto_previo}
 """
         try:
-            # Inicializamos el cliente apuntando al contenedor correcto en la red de Docker
             client = ollama.Client(host=OLLAMA_BASE)
-            
-            # Forzamos una respuesta estructurada que cumpla con el esquema JSON
             response = client.json(
                 model=MODEL_NAME,
                 prompt=prompt,
@@ -85,28 +90,39 @@ Historial: {contexto_previo}
                     'properties': {
                         'playbook': {
                             'type': 'string',
-                            'enum': PLAYBOOKS_PERMITIDOS  # Obliga a elegir SOLO entre 'ping' o 'reboot_service'
+                            'enum': PLAYBOOKS_PERMITIDOS
+                        },
+                        'target_host': {
+                            'type': 'string',
+                            'description': 'El hostname o IP afectado. Usa localhost si no se puede deducir.'
+                        },
+                        'service_name': {
+                            'type': 'string',
+                            'description': 'El nombre del servicio afectado (ej. nginx, sshd). Deja vacío si no aplica.'
                         }
                     },
-                    'required': ['playbook'],
+                    'required': ['playbook', 'target_host', 'service_name'],
                 }
             )
             playbook_sugerido = response.get('playbook', 'ping')
+            target_host = response.get('target_host', 'localhost')
+            service_name = response.get('service_name', '')
         except Exception as e:
-            log.error("Fallo en la inferencia estructurada del SDK, aplicando fallback: %s", e)
+            log.error("Fallo en la inferencia estructurada del SDK: %s", e)
             playbook_sugerido = 'ping'
+            target_host = 'localhost'
+            service_name = ''
 
-        # Doble verificación de seguridad por si acaso
         playbook = playbook_sugerido if playbook_sugerido in PLAYBOOKS_PERMITIDOS else 'ping'
 
-        # 4) Invocación de Ansible (Se mantendrá local hasta que hagamos la Mejora 4)
+        # 4) Invocación de Ansible (Variables dinámicas)
         r = ansible_runner.run(
             private_data_dir='/srv/playbooks',
             playbook=f"project/{playbook}.yml",
             extravars={
                 "ticket_id": ticket_id,
-                "target_host": "web01.proyecto.local",  # Host dinámico de la infraestructura
-                "service_name": "nginx"                  # Servicio dinámico que requiere atención
+                "target_host": target_host,  # <-- Inyectado dinámicamente
+                "service_name": service_name # <-- Inyectado dinámicamente
             },
             quiet=True
         )

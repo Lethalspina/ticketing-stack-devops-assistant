@@ -16,7 +16,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-ticketing_db}
       POSTGRES_USER: ${DB_USER:-postgres_user}
-      # MEJORA: Añadido fallback por si el .env no tiene asignada la clave DB_PASSWORD
+      # Fallback por si el .env no tiene asignada la clave DB_PASSWORD
       POSTGRES_PASSWORD: ${DB_PASSWORD:-cambiame_por_un_password_seguro_local}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -33,7 +33,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: ticketing-redis
-    # SEGURIDAD: Ya no exponemos el puerto 6379 al host exterior para evitar escaneos de puertos
+    # SEGURIDAD: No exponemos el puerto al host exterior
     networks:
       - backend-nw
     # HEALTHCHECK: Comprueba que Redis responde al comando PING interno
@@ -47,7 +47,7 @@ services:
   chroma:
     image: ghcr.io/chroma-core/chroma:0.4.24
     container_name: ticketing-chromadb
-    # SEGURIDAD: Quitamos los puertos expuestos fuera. Solo accesible dentro de la red IA.
+    # SEGURIDAD: Solo accesible dentro de la red IA.
     volumes:
       - chroma_data:/data
     networks:
@@ -64,17 +64,34 @@ services:
       - ai-nw
     restart: always
 
+  # --- NUEVO SERVICIO PARA MIGRACIONES AISLADAS ---
+  db-migrator:
+    build: ./web
+    container_name: ticketing-migrator
+    command: python manage.py migrate
+    environment:
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+    networks:
+      - backend-nw
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
     build: ./web
     container_name: ticketing-django
+    # Eliminado el comando "migrate" para evitar race conditions
     command: >
       bash -c "python manage.py collectstatic --noinput &&
-               python manage.py migrate &&
                gunicorn portal.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     ports:
       - "8000:8000"  # El único contenedor accesible desde tu navegador
     volumes:
-      - ./web:/app
+      # Mantenemos solo el mapeo de playbooks, eliminando ./web:/app para mantener la inmutabilidad
       - ./playbooks:/srv/playbooks
     environment:
       - DEBUG=${DEBUG}
@@ -97,12 +114,14 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL}
     networks:
       - frontend-nw  # Para comunicarse con el usuario
-      - backend-nw   # Para comunicarse con Postgres y Redis (No ve a la IA directamente)
+      - backend-nw   # Para comunicarse con Postgres y Redis
     depends_on:
       db:
-        condition: service_healthy  # Espera a que el healthcheck de DB pase a "healthy"
+        condition: service_healthy
       redis:
-        condition: service_healthy  # Espera a que el healthcheck de Redis pase a "healthy"
+        condition: service_healthy
+      db-migrator:
+        condition: service_completed_successfully # Espera a que termine la migración
     restart: always
 
   celery_worker:
@@ -110,7 +129,7 @@ services:
     container_name: ticketing-celery
     command: celery -A portal worker --loglevel=INFO --concurrency=2
     volumes:
-      - ./web:/app
+      # Mantenemos solo el mapeo de playbooks, eliminando ./web:/app
       - ./playbooks:/srv/playbooks
     environment:
       - DEBUG=${DEBUG}
@@ -144,6 +163,8 @@ services:
         condition: service_started
       ollama:
         condition: service_started
+      db-migrator:
+        condition: service_completed_successfully # Los workers también esperan a la migración
     restart: always
 
 volumes:
