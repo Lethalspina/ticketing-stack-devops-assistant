@@ -1,0 +1,7 @@
+- name: Forzar reinicio de servicio crítico caído[cite: 1]
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Simular reinicio del daemon
+      ansible.builtin.debug:
+        msg: "Ejecutando reinicio controlado del servicio afectado para restaurar el SLA..."

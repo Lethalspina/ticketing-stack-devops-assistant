@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Abrir Nueva Incidencia de Infraestructura</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título de la incidencia:</label>
+                        {{ form.titulo }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción detallada del fallo:</label>
+                        {{ form.descripcion }}
+                        <div class="form-text">Describe el problema (ej: "El servidor host web01 no responde al comando ping"). Nuestra IA buscará playbooks para solucionarlo.</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'tickets:list' %}" class="btn btn-secondary">Volver al listado</a>
+                        <button type="submit" class="btn btn-success">Enviar a Diagnóstico IA</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

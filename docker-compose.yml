@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ticketing-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ticketing_db}
+      POSTGRES_USER: ${DB_USER:-postgres_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: ticketing-redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+  chroma:
+    image: ghcr.io/chroma-core/chroma:0.4.24
+    container_name: ticketing-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/data
+    restart: always
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ticketing-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    restart: always
+
+  web:
+    build: ./web
+    container_name: ticketing-django
+    command: >
+      bash -c "python manage.py migrate &&
+               gunicorn portal.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./web:/app
+      - ./playbooks:/srv/playbooks
+    environment:
+      - DEBUG=${DEBUG}
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=${REDIS_URL}
+      - LDAP_SERVER=${LDAP_SERVER}
+      - LDAP_BIND_DN=${LDAP_BIND_DN}
+      - LDAP_BIND_PW=${LDAP_BIND_PW}
+      - LDAP_BASE=${LDAP_BASE}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+    depends_on:
+      - db
+      - redis
+    restart: always
+
+  celery_worker:
+    build: ./web
+    container_name: ticketing-celery
+    command: celery -A portal worker --loglevel=INFO --concurrency=2
+    volumes:
+      - ./web:/app
+      - ./playbooks:/srv/playbooks
+    environment:
+      - DEBUG=${DEBUG}
+      - SECRET_KEY=${DJANGO_SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_URL=${REDIS_URL}
+      - CHROMA_URL=${CHROMA_URL}
+      - OLLAMA_URL=${OLLAMA_URL}
+      - MODEL_NAME=${MODEL_NAME}
+      - EMBED_MODEL=${EMBED_MODEL}
+      - COLLECTION_NAME=${COLLECTION_NAME}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_PORT=${EMAIL_PORT}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+    depends_on:
+      - db
+      - redis
+      - chroma
+      - ollama
+    restart: always
+
+volumes:
+  postgres_data:
+  chroma_data:
+  ollama_storage:

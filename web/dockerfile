@@ -1,0 +1,19 @@
+FROM python:3.11-slim
+
+# Instalar dependencias del sistema necesarias para compilar paquetes de python y compilar LDAP
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq-dev \
+    libldap2-dev \
+    libsasl2-dev \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Instalar requisitos de Python
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copiar el código del proyecto
+COPY . /app/

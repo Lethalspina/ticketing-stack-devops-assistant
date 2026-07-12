@@ -1,0 +1,20 @@
+# Entornos virtuales locales
+venv/
+.venv/
+env/
+
+# Archivos de configuración y secretos locales
+.env
+
+# Base de datos local (por si acaso)
+*.sqlite3
+
+# Cache de Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Datos persistentes de contenedores (Ignorados para no subirlos a GitHub)
+postgres_data/
+chroma_data/
+ollama_storage/

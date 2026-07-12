@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center {% if ticket.estado == 'resolved' %}bg-success text-white{% elif ticket.estado == 'failed' %}bg-danger text-white{% else %}bg-secondary text-white{% endif %}">
+        <h4 class="mb-0">{{ ticket.titulo }}</h4>
+        <span class="badge bg-light text-dark text-uppercase p-2">{{ ticket.get_estado_display }}</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">Creado el {{ ticket.creado|date:"d/m/Y H:i" }} por {{ ticket.creador.username }}</p>
+        <hr>
+        <h5>Descripción del incidente:</h5>
+        <div class="bg-white p-3 border rounded mb-4">
+            {{ ticket.descripcion|linebreaks }}
+        </div>
+
+        {% if ticket.playbook_usado %}
+        <h5>Playbook de Ansible sugerido y ejecutado:</h5>
+        <p><code class="fs-5 bg-dark text-warning p-2 rounded d-inline-block">{{ ticket.playbook_usado }}.yml</code></p>
+        {% endif %}
+
+        {% if ticket.solucion %}
+        <h5 class="mt-4">Salida estándar de la ejecución (Remediación):</h5>
+        <pre class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto;"><code>{{ ticket.solucion }}</code></pre>
+        {% endif %}
+    </div>
+    <div class="card-footer bg-white">
+        <a href="{% url 'tickets:list' %}" class="btn btn-primary btn-sm">Volver al panel principal</a>
+    </div>
+</div>
+{% endblock %}
