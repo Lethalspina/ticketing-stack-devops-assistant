@@ -1,23 +1,5 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Historial de Incidencias</h2>
-    <a href="{% url 'tickets:create' %}" class="btn btn-success">+ Nuevo Ticket</a>
-</div>
-<div class="card shadow">
-    <div class="card-body p-0">
-        <table class="table table-hover table-striped mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Título</th>
-                    <th>Estado</th>
-                    <th>Playbook Sugerido</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ticket in tickets %}
+<tbody>
+                {% for ticket in page_obj %}
                 <tr>
                     <td>{{ ticket.id }}</td>
                     <td><a href="{% url 'tickets:detail' ticket.id %}" class="text-decoration-none fw-bold">{{ ticket.titulo }}</a></td>
@@ -38,4 +20,32 @@
         </table>
     </div>
 </div>
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Navegación de páginas" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link text-dark">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+            </li>
+        {% else %}
+            <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}
