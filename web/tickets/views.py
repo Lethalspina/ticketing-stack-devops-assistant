@@ -2,9 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db import transaction # MEJORA: Importamos el módulo de transacciones
 from django.core.paginator import Paginator
+from django.contrib import messages
 from .models import Ticket
 from .forms import TicketForm
-from .tasks import procesa_ticket
+from .tasks import analizar_ticket, ejecutar_playbook
 
 @login_required
 def ticket_list(request):
@@ -29,8 +30,8 @@ def ticket_create(request):
             t.save()
             
             # MEJORA: Se encola la tarea asíncrona SOLO cuando la transacción de la BD se consolide (commit)
-            transaction.on_commit(lambda: procesa_ticket.delay(t.id))
-            
+            transaction.on_commit(lambda: analizar_ticket.delay(t.id)) 
+
             return redirect('tickets:detail', pk=t.pk)
     else:
         form = TicketForm()
@@ -40,3 +41,16 @@ def ticket_create(request):
 def ticket_detail(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk, creador=request.user)
     return render(request, 'tickets/detail.html', {'ticket': ticket})
+
+@login_required
+@user_passes_test(lambda u: u.is_staff) # <-- Solo los miembros del grupo IT_Admins (staff) pueden entrar
+def ticket_approve(request, pk):
+    # Obtenemos el ticket sin importar quién lo creó (el admin puede ver todos los retenidos)
+    ticket = get_object_or_404(Ticket, pk=pk)
+    
+    if request.method == 'POST' and ticket.estado == 'pending':
+        # Encolamos la Tarea 2 (Ejecución) y le pasamos el relevo a Celery
+        ejecutar_playbook.delay(ticket.id)
+        messages.success(request, f"¡Ejecución aprobada! Iniciando {ticket.playbook_usado}.yml en {ticket.target_host_inferido}...")
+        
+    return redirect('tickets:detail', pk=ticket.pk)

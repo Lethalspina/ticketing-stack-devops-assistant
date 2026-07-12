@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 import ldap
-from django_auth_ldap.config import LDAPSearch
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -89,6 +89,19 @@ CELERY_TIMEZONE = 'Europe/Madrid'[cite: 1]
 AUTH_LDAP_SERVER_URI = os.getenv('LDAP_SERVER', 'ldap://ad.proyecto.local')[cite: 1]
 AUTH_LDAP_BIND_DN = os.getenv('LDAP_BIND_DN', '')[cite: 1]
 AUTH_LDAP_BIND_PASSWORD = os.getenv('LDAP_BIND_PW', '')[cite: 1]
+# ---- MAPEO DE PERMISOS POR GRUPOS DE ACTIVE DIRECTORY ----
+AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
+    os.getenv('LDAP_BASE', 'dc=proyecto,dc=local'),
+    ldap.SCOPE_SUBTREE,
+    "(objectClass=group)"
+)
+AUTH_LDAP_GROUP_TYPE = GroupOfNamesType()
+
+# Si el usuario pertenece a este grupo en AD, Django le da permisos de administrador automáticamente
+AUTH_LDAP_USER_FLAGS_BY_GROUP = {
+    "is_staff": f"cn=IT_Admins,cn=Users,{os.getenv('LDAP_BASE', 'dc=proyecto,dc=local')}",
+    "is_superuser": f"cn=IT_Admins,cn=Users,{os.getenv('LDAP_BASE', 'dc=proyecto,dc=local')}",
+}
 AUTH_LDAP_USER_SEARCH = LDAPSearch(
     os.getenv('LDAP_BASE', 'dc=proyecto,dc=local'),
     ldap.SCOPE_SUBTREE,

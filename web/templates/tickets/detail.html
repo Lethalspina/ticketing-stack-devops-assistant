@@ -11,6 +11,38 @@
         <h5>Descripción del incidente:</h5>
         <div class="bg-white p-3 border rounded mb-4">
             {{ ticket.descripcion|linebreaks }}
+            <h5>Descripción del incidente:</h5>
+        <div class="bg-white p-3 border rounded mb-4">
+            {{ ticket.descripcion|linebreaks }}
+        </div>
+
+        {% if ticket.estado == 'pending' %}
+        <div class="alert alert-warning shadow-sm mb-4 border-warning">
+            <h4 class="alert-heading text-dark">⚠️ Acción Crítica Retenida (Human-in-the-Loop)</h4>
+            <p class="text-dark">La Inteligencia Artificial ha deducido que este problema requiere una acción invasiva en la infraestructura.</p>
+            <hr>
+            <ul class="text-dark">
+                <li><strong>Playbook sugerido:</strong> <code>{{ ticket.playbook_usado }}.yml</code></li>
+                <li><strong>Servidor Objetivo:</strong> {{ ticket.target_host_inferido }}</li>
+                <li><strong>Servicio Afectado:</strong> {{ ticket.service_name_inferido }}</li>
+            </ul>
+            
+            {% if request.user.is_staff %}
+                <form action="{% url 'tickets:approve' ticket.id %}" method="POST" class="mt-3">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger fw-bold shadow">
+                        Aprobar y Ejecutar Ansible
+                    </button>
+                </form>
+            {% else %}
+                <div class="alert alert-secondary mt-3 mb-0">
+                    <i class="fw-bold">Tu solución está siendo revisada por un administrador del sistema. Recibirás un correo cuando sea aprobada.</i>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% if ticket.playbook_usado and ticket.estado != 'pending' %}
+        <h5>Playbook de Ansible sugerido y ejecutado:</h5>
         </div>
 
         {% if ticket.playbook_usado %}

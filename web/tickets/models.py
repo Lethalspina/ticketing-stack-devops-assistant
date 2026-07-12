@@ -5,17 +5,25 @@ class Ticket(models.Model):
     ESTADOS = [
         ('open',     'Abierto'),
         ('running',  'En curso'),
+        ('pending',  'Pendiente de Aprobación'), # <-- NUEVO ESTADO AÑADIDO
         ('resolved', 'Resuelto'),
         ('failed',   'Fallido'),
-    ][cite: 1]
+    ]
 
-    titulo         = models.CharField(max_length=120)[cite: 1]
-    descripcion    = models.TextField()[cite: 1]
-    creador        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)[cite: 1]
-    estado         = models.CharField(max_length=10, choices=ESTADOS, default='open')[cite: 1]
-    solucion       = models.TextField(blank=True)[cite: 1]
-    playbook_usado = models.CharField(max_length=120, blank=True)[cite: 1]
-    creado         = models.DateTimeField(auto_now_add=True)[cite: 1]
+    titulo         = models.CharField(max_length=120)
+    descripcion    = models.TextField()
+    creador        = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    estado         = models.CharField(max_length=10, choices=ESTADOS, default='open')
+    solucion       = models.TextField(blank=True)
+    playbook_usado = models.CharField(max_length=120, blank=True)
+    
+    # --- NUEVOS CAMPOS PARA HUMAN-IN-THE-LOOP ---
+    requiere_aprobacion   = models.BooleanField(default=False)
+    target_host_inferido  = models.CharField(max_length=100, blank=True)
+    service_name_inferido = models.CharField(max_length=100, blank=True)
+    # --------------------------------------------
+    
+    creado         = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"[{self.id}] {self.titulo}"[cite: 1]
+        return f"[{self.id}] {self.titulo}"
