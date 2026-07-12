@@ -7,7 +7,8 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-ticketing_db}
       POSTGRES_USER: ${DB_USER:-postgres_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      # MEJORA: Añadido fallback por si el .env no tiene asignada la clave DB_PASSWORD
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-cambiame_por_un_password_seguro_local}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
@@ -41,7 +42,8 @@ services:
     build: ./web
     container_name: ticketing-django
     command: >
-      bash -c "python manage.py migrate &&
+      bash -c "python manage.py collectstatic --noinput &&
+               python manage.py migrate &&
                gunicorn portal.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     ports:
       - "8000:8000"
