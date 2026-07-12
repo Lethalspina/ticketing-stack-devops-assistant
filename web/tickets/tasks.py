@@ -103,6 +103,11 @@ Historial: {contexto_previo}
         r = ansible_runner.run(
             private_data_dir='/srv/playbooks',
             playbook=f"project/{playbook}.yml",
+            extravars={
+                "ticket_id": ticket_id,
+                "target_host": "web01.proyecto.local",  # Host dinámico de la infraestructura
+                "service_name": "nginx"                  # Servicio dinámico que requiere atención
+            },
             quiet=True
         )
 

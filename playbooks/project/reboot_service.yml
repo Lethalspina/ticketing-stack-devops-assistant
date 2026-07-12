@@ -1,7 +1,9 @@
-- name: Forzar reinicio de servicio crítico caído[cite: 1]
-  hosts: localhost
+- name: Forzar reinicio de servicio crítico caído
+  hosts: "{{ target_host | default('localhost') }}"
   gather_facts: no
   tasks:
-    - name: Simular reinicio del daemon
-      ansible.builtin.debug:
-        msg: "Ejecutando reinicio controlado del servicio afectado para restaurar el SLA..."
+    - name: Reiniciar servicio afectado de forma real
+      ansible.builtin.systemd:
+        name: "{{ service_name | default('nginx') }}"
+        state: restarted
+      become: yes
