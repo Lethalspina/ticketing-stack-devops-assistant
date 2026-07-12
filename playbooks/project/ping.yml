@@ -1,6 +1,6 @@
-- name: Verificar conectividad básica de red[cite: 1]
+- name: Verificar conectividad básica de red
   hosts: localhost
   gather_facts: no
   tasks:
     - name: Lanzar Ping de diagnóstico
-      ansible.builtin.ping:[cite: 1]
+      ansible.builtin.ping:

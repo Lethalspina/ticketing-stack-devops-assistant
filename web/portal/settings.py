@@ -36,7 +36,7 @@ ROOT_URLCONF = 'portal.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],[cite: 1]
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,7 +71,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'es-es'
-TIME_ZONE = 'Europe/Madrid'[cite: 1]
+TIME_ZONE = 'Europe/Madrid' 
 USE_I18N = True
 USE_TZ = True
 
@@ -80,15 +80,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ---- CONFIGURACIÓN DE CELERY ----
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')[cite: 1]
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://redis:6379/0')[cite: 1]
-CELERY_TASK_ACKS_LATE = True[cite: 1]
-CELERY_TIMEZONE = 'Europe/Madrid'[cite: 1]
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0') 
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://redis:6379/0') 
+CELERY_TASK_ACKS_LATE = True 
+CELERY_TIMEZONE = 'Europe/Madrid' 
 
 # ---- AUTENTICACIÓN HÍBRIDA SAMBA 4 ACTIVE DIRECTORY (LDAP) ----
-AUTH_LDAP_SERVER_URI = os.getenv('LDAP_SERVER', 'ldap://ad.proyecto.local')[cite: 1]
-AUTH_LDAP_BIND_DN = os.getenv('LDAP_BIND_DN', '')[cite: 1]
-AUTH_LDAP_BIND_PASSWORD = os.getenv('LDAP_BIND_PW', '')[cite: 1]
+AUTH_LDAP_SERVER_URI = os.getenv('LDAP_SERVER', 'ldap://ad.proyecto.local') 
+AUTH_LDAP_BIND_DN = os.getenv('LDAP_BIND_DN', '') 
+AUTH_LDAP_BIND_PASSWORD = os.getenv('LDAP_BIND_PW', '') 
 # ---- MAPEO DE PERMISOS POR GRUPOS DE ACTIVE DIRECTORY ----
 AUTH_LDAP_GROUP_SEARCH = LDAPSearch(
     os.getenv('LDAP_BASE', 'dc=proyecto,dc=local'),
@@ -106,16 +106,16 @@ AUTH_LDAP_USER_SEARCH = LDAPSearch(
     os.getenv('LDAP_BASE', 'dc=proyecto,dc=local'),
     ldap.SCOPE_SUBTREE,
     "(sAMAccountName=%(user)s)"
-)[cite: 1]
+) 
 
 AUTH_LDAP_CONNECTION_OPTIONS = {
     ldap.OPT_REFERRALS: 0,
-}[cite: 1]
+} 
 
 AUTHENTICATION_BACKENDS = [
     'django_auth_ldap.backend.LDAPBackend',
     'django.contrib.auth.backends.ModelBackend',
-][cite: 1]
+] 
 
 # ---- EMAIL ----
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -127,8 +127,8 @@ EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = os.getenv('EMAIL_HOST_USER', '')
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', '')
 
-LOGIN_REDIRECT_URL = '/tickets/'[cite: 1]
-LOGOUT_REDIRECT_URL = '/login/'[cite: 1]
+LOGIN_REDIRECT_URL = '/tickets/' 
+LOGOUT_REDIRECT_URL = '/login/' 
 
 # ---- CONFIGURACIÓN DE ALMACENAMIENTO PARA WHITENOISE (PRODUCCIÓN) ----
 STORAGES = {
