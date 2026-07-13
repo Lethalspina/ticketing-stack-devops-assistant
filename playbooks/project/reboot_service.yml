@@ -1,9 +1,17 @@
-- name: Forzar reinicio de servicio crítico caído
-  hosts: "{{ target_host | default('localhost') }}"
-  gather_facts: no
+- name: Restart an approved service on an approved target
+  hosts: managed_target
+  gather_facts: false
+  become: true
   tasks:
-    - name: Reiniciar servicio afectado de forma real
+    - name: Restart the approved service
       ansible.builtin.systemd:
-        name: "{{ service_name | default('nginx') }}"
+        name: "{{ approved_service_name }}"
         state: restarted
-      become: yes
+      register: restart_result
+
+    - name: Verify that the service is active
+      ansible.builtin.command:
+        argv: ["systemctl", "is-active", "{{ approved_service_name }}"]
+      register: active_result
+      changed_when: false
+      failed_when: active_result.stdout.strip() != "active"

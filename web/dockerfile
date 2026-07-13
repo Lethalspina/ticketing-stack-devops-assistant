@@ -1,19 +1,28 @@
-FROM python:3.11-slim
-
-# Instalar dependencias del sistema necesarias para compilar paquetes de python y compilar LDAP
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-    libldap2-dev \
-    libsasl2-dev \
-    python3-dev \
+FROM python:3.11-slim AS builder
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc libpq-dev libldap2-dev libsasl2-dev python3-dev \
     && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY requirements.txt .
+RUN python -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt
 
+FROM python:3.11-slim AS runtime
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/opt/venv/bin:$PATH"
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 libldap-2.5-0 libsasl2-2 \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system app \
+    && useradd --system --gid app --home-dir /app app
+COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
+COPY --chown=app:app . /app
+RUN mkdir -p /app/staticfiles && chown app:app /app/staticfiles
+USER app
 
-# Instalar requisitos de Python
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copiar el código del proyecto
-COPY . /app/
+FROM runtime AS automation
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+USER app

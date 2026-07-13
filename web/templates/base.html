@@ -1,29 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevOps Assistant Ticketing</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="#">🚀 DevOps Ticket AI</a>
-            {% if user.is_authenticated %}
-            <div class="d-flex align-items-center text-white">
-                <span class="me-3">Hola, <strong>{{ user.username }}</strong></span>
-                <a href="{% url 'tickets:list' %}" class="btn btn-outline-light btn-sm me-2">Mis Tickets</a>
-                <form action="{% url 'logout' %}" method="post" class="m-0">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm">Salir</button>
-                </form>
-            </div>
-            {% endif %}
-        </div>
-    </nav>
-    <div class="container">
-        {% block content %}{% endblock %}
-    </div>
-</body>
-</html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{% block title %}Ticketing{% endblock %}</title><style>body{font-family:system-ui;max-width:1000px;margin:auto;padding:1rem}nav{display:flex;gap:1rem;align-items:center}textarea,input{width:100%;box-sizing:border-box}.msg{padding:.7rem;background:#eef}.errorlist{color:#a00}pre{white-space:pre-wrap;background:#f4f4f4;padding:1rem}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #ddd;padding:.5rem;text-align:left}</style></head><body>
+<nav><a href="{% url 'tickets:list' %}">Mis tickets</a><a href="{% url 'tickets:create' %}">Nuevo</a>{% if user.is_authenticated %}<span>{{ user.username }}</span><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit">Cerrar sesión</button></form>{% endif %}</nav>
+{% for message in messages %}<p class="msg">{{ message }}</p>{% endfor %}<main>{% block content %}{% endblock %}</main></body></html>

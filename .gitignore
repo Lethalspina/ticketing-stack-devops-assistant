@@ -1,20 +1,27 @@
-# Entornos virtuales locales
-venv/
-.venv/
-env/
-
-# Archivos de configuración y secretos locales
 .env
-
-# Base de datos local (por si acaso)
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+*$py.class
 *.sqlite3
-
-# Cache de Python
-**/__pycache__/
-**/*.pyc
-**/*.pyo
-
-# Datos persistentes de contenedores (Ignorados para no subirlos a GitHub)
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+*.log
+celerybeat-schedule
 postgres_data/
 chroma_data/
 ollama_storage/
+staticfiles/
+media/
+dist/
+build/
+*.egg-info/

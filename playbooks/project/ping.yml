@@ -1,6 +1,7 @@
-- name: Verificar conectividad básica de red
-  hosts: localhost
-  gather_facts: no
+- name: Verify Ansible connectivity to an approved target
+  hosts: managed_target
+  gather_facts: false
   tasks:
-    - name: Lanzar Ping de diagnóstico
+    - name: Verify Python execution through Ansible
       ansible.builtin.ping:
+      changed_when: false
